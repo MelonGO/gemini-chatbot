@@ -99,24 +99,6 @@ export async function getChatById({ id }: { id: string }) {
   }
 }
 
-export async function createReservation({
-  id,
-  userId,
-  details,
-}: {
-  id: string;
-  userId: string;
-  details: any;
-}) {
-  return await db.insert(reservation).values({
-    id,
-    createdAt: new Date(),
-    userId,
-    hasCompletedPayment: false,
-    details: JSON.stringify(details),
-  });
-}
-
 export async function getReservationById({ id }: { id: string }) {
   const [selectedReservation] = await db
     .select()
