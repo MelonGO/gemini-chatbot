@@ -77,7 +77,12 @@ export const Message = ({
         )}
       >
         {content && typeof content === "string" && (
-          <div className="flex flex-row gap-2 items-start group w-full">
+          <div
+            className={cn(
+              "flex flex-row gap-2 items-start group w-full",
+              isAssistant ? "justify-start" : "justify-end",
+            )}
+          >
             {!isAssistant && (
               <div className="shrink-0 pt-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <CopyButton content={content} />
