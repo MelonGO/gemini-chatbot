@@ -3,6 +3,7 @@
 import { Attachment, Message } from "ai";
 import { useChat } from "ai/react";
 import { useState } from "react";
+
 import { models, ModelId } from "@/ai";
 import { Message as PreviewMessage } from "@/components/custom/message";
 import { useScrollToBottom } from "@/components/custom/use-scroll-to-bottom";
@@ -56,6 +57,18 @@ export function Chat({
               toolInvocations={message.toolInvocations}
             />
           ))}
+
+          {isLoading &&
+            messages.length > 0 &&
+            messages[messages.length - 1].role === "user" && (
+              <PreviewMessage
+                chatId={id}
+                role="assistant"
+                content=""
+                isLoading={true}
+                toolInvocations={[]}
+              />
+            )}
 
           <div
             ref={messagesEndRef}

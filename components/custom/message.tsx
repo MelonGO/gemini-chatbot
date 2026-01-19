@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { ReactNode } from "react";
 import { Streamdown } from "streamdown";
 
-import { BotIcon, UserIcon } from "./icons";
+import { BotIcon, UserIcon, LoaderIcon } from "./icons";
 import { PreviewAttachment } from "./preview-attachment";
 
 export const Message = ({
@@ -14,16 +14,18 @@ export const Message = ({
   content,
   toolInvocations,
   attachments,
+  isLoading,
 }: {
   chatId: string;
   role: string;
   content: string | ReactNode;
   toolInvocations: Array<ToolInvocation> | undefined;
   attachments?: Array<Attachment>;
+  isLoading?: boolean;
 }) => {
   return (
     <motion.div
-      className={`flex flex-row gap-4 px-4 w-full md:w-[500px] md:px-0 first-of-type:pt-20`}
+      className={`flex flex-row gap-4 px-4 w-full md:w-[calc(100dvw-64px)] md:px-0 first-of-type:pt-20`}
       initial={{ y: 5, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
     >
@@ -35,6 +37,15 @@ export const Message = ({
         {content && typeof content === "string" && (
           <div className="text-zinc-800 dark:text-zinc-300 flex flex-col gap-4">
             <Streamdown>{content}</Streamdown>
+          </div>
+        )}
+
+        {isLoading && (
+          <div className="flex flex-row items-center gap-2 text-zinc-500">
+            <div className="animate-spin">
+              <LoaderIcon />
+            </div>
+            <div className="text-sm italic">AI is thinking...</div>
           </div>
         )}
 
