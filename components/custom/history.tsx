@@ -3,7 +3,7 @@
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import cx from "classnames";
 import Link from "next/link";
-import { useParams, usePathname } from "next/navigation";
+import { useParams, usePathname, useRouter } from "next/navigation";
 import { User } from "next-auth";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -47,6 +47,7 @@ import {
 export const History = ({ user }: { user: User | undefined }) => {
   const { id } = useParams();
   const pathname = usePathname();
+  const router = useRouter();
 
   const [isHistoryVisible, setIsHistoryVisible] = useState(false);
   const {
@@ -74,9 +75,12 @@ export const History = ({ user }: { user: User | undefined }) => {
       success: () => {
         mutate((history) => {
           if (history) {
-            return history.filter((h) => h.id !== id);
+            return history.filter((h) => h.id !== deleteId);
           }
         });
+
+        router.push("/");
+
         return "Chat deleted successfully";
       },
       error: "Failed to delete chat",
