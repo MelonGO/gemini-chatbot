@@ -84,7 +84,7 @@ export const Message = ({
             )}
           >
             {!isAssistant && (
-              <div className="shrink-0 pt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="shrink-0 pt-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
                 <CopyButton content={content} />
               </div>
             )}
@@ -103,7 +103,7 @@ export const Message = ({
             </div>
 
             {isAssistant && (
-              <div className="shrink-0 pt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="shrink-0 pt-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
                 <CopyButton content={content} />
               </div>
             )}
