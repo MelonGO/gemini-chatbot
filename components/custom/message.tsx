@@ -2,16 +2,17 @@
 
 import { Attachment, ToolInvocation } from "ai";
 import { motion } from "framer-motion";
+import { CopyIcon } from "lucide-react";
 import { ReactNode } from "react";
+import { toast } from "sonner";
 import { Streamdown } from "streamdown";
 import { useCopyToClipboard } from "usehooks-ts";
-import { toast } from "sonner";
-import { CopyIcon } from "lucide-react";
+
+import { cn } from "@/lib/utils";
 
 import { BotIcon, UserIcon, LoaderIcon } from "./icons";
 import { PreviewAttachment } from "./preview-attachment";
 import { Button } from "../ui/button";
-import { cn } from "@/lib/utils";
 
 const CopyButton = ({ content, className }: { content: string; className?: string }) => {
   const [_, copy] = useCopyToClipboard();

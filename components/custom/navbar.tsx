@@ -1,7 +1,6 @@
+import { headers } from "next/headers";
 import Image from "next/image";
 import Link from "next/link";
-
-import { headers } from "next/headers";
 
 import { auth, signOut } from "@/app/(auth)/auth";
 
