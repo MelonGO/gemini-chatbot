@@ -28,6 +28,8 @@ export default function Page() {
       toast.error("Failed to create account");
     } else if (state.status === "invalid_data") {
       toast.error("Failed validating your submission!");
+    } else if (state.status === "incorrect_access_password") {
+      toast.error("Incorrect access password");
     } else if (state.status === "success") {
       toast.success("Account created successfully");
       router.refresh();
@@ -48,7 +50,7 @@ export default function Page() {
             Create an account with your email and password
           </p>
         </div>
-        <AuthForm action={handleSubmit} defaultEmail={email}>
+        <AuthForm action={handleSubmit} defaultEmail={email} isSignUp={true}>
           <SubmitButton>Sign Up</SubmitButton>
           <p className="text-center text-sm text-gray-600 mt-4 dark:text-zinc-400">
             {"Already have an account? "}

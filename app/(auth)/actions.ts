@@ -48,7 +48,8 @@ export interface RegisterActionState {
     | "success"
     | "failed"
     | "user_exists"
-    | "invalid_data";
+    | "invalid_data"
+    | "incorrect_access_password";
 }
 
 export const register = async (
@@ -60,6 +61,12 @@ export const register = async (
       email: formData.get("email"),
       password: formData.get("password"),
     });
+
+    const accessPassword = formData.get("accessPassword") as string;
+
+    if (accessPassword !== process.env.AUTH_REGISTRATION_PASSWORD) {
+      return { status: "incorrect_access_password" };
+    }
 
     let [user] = await getUser(validatedData.email);
 

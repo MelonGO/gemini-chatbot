@@ -5,14 +5,35 @@ export function AuthForm({
   action,
   children,
   defaultEmail = "",
+  isSignUp = false,
 }: {
   action: any;
   children: React.ReactNode;
   defaultEmail?: string;
+  isSignUp?: boolean;
 }) {
   return (
     <form action={action} className="flex flex-col gap-4 px-4 sm:px-16">
       <div className="flex flex-col gap-2">
+        {isSignUp && (
+          <>
+            <Label
+              htmlFor="accessPassword"
+              className="text-zinc-600 font-normal dark:text-zinc-400"
+            >
+              Access Password
+            </Label>
+            <Input
+              id="accessPassword"
+              name="accessPassword"
+              className="bg-muted text-md md:text-sm border-none"
+              type="password"
+              placeholder="Enter access password"
+              required
+            />
+          </>
+        )}
+
         <Label
           htmlFor="email"
           className="text-zinc-600 font-normal dark:text-zinc-400"
