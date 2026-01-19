@@ -1,6 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { headers } from "next/headers";
+
 import { auth, signOut } from "@/app/(auth)/auth";
 
 import { History } from "./history";
@@ -15,6 +17,7 @@ import {
 } from "../ui/dropdown-menu";
 
 export const Navbar = async () => {
+  await headers();
   let session = await auth();
 
   return (

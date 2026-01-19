@@ -3,7 +3,7 @@
 import { Attachment, Message } from "ai";
 import { useChat } from "ai/react";
 import { useState } from "react";
-
+import { models, ModelId } from "@/ai";
 import { Message as PreviewMessage } from "@/components/custom/message";
 import { useScrollToBottom } from "@/components/custom/use-scroll-to-bottom";
 
@@ -17,10 +17,14 @@ export function Chat({
   id: string;
   initialMessages: Array<Message>;
 }) {
+  const [selectedModelId, setSelectedModelId] = useState<ModelId>(
+    models[0].id,
+  );
+
   const { messages, handleSubmit, input, setInput, append, isLoading, stop } =
     useChat({
       id,
-      body: { id },
+      body: { id, modelId: selectedModelId },
       initialMessages,
       maxSteps: 10,
       onFinish: () => {
@@ -70,6 +74,8 @@ export function Chat({
             setAttachments={setAttachments}
             messages={messages}
             append={append}
+            selectedModelId={selectedModelId}
+            setSelectedModelId={setSelectedModelId}
           />
         </form>
       </div>
