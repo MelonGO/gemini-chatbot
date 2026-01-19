@@ -1,4 +1,5 @@
 import { convertToCoreMessages, Message, streamText } from "ai";
+import { DeleteObjectsCommand } from "@aws-sdk/client-s3";
 
 import { getModelById } from "@/ai";
 import { auth } from "@/app/(auth)/auth";
@@ -7,6 +8,7 @@ import {
   getChatById,
   saveChat,
 } from "@/db/queries";
+import { r2Client } from "@/lib/r2";
 
 export async function POST(request: Request) {
   const {
@@ -68,8 +70,66 @@ export async function DELETE(request: Request) {
   try {
     const chat = await getChatById({ id });
 
-    if (chat.userId !== session.user.id) {
+    if (!chat || chat.userId !== session.user.id) {
       return new Response("Unauthorized", { status: 401 });
+    }
+
+    const messages = chat.messages as Array<Message>;
+    const fileKeys: Array<{ Key: string }> = [];
+
+    const r2PublicDomain = process.env.R2_PUBLIC_DOMAIN
+      ? new URL(process.env.R2_PUBLIC_DOMAIN).hostname
+      : null;
+
+    const addKeyFromUrl = (urlString: string) => {
+      try {
+        const url = new URL(urlString);
+        if (r2PublicDomain && url.hostname !== r2PublicDomain) return;
+
+        const key = decodeURIComponent(url.pathname.slice(1));
+        if (key && !fileKeys.some((fk) => fk.Key === key)) {
+          fileKeys.push({ Key: key });
+        }
+      } catch (e) {
+        // Not a valid URL
+      }
+    };
+
+    for (const message of messages) {
+      if (message.experimental_attachments) {
+        for (const attachment of message.experimental_attachments) {
+          if (attachment.url) {
+            addKeyFromUrl(attachment.url);
+          }
+        }
+      }
+
+      if (Array.isArray(message.content)) {
+        for (const part of message.content) {
+          if (part.type === "image" && part.image) {
+            if (typeof part.image === "string" && part.image.startsWith("http")) {
+              addKeyFromUrl(part.image);
+            }
+          } else if (part.type === "file" && part.data) {
+            if (typeof part.data === "string" && part.data.startsWith("http")) {
+              addKeyFromUrl(part.data);
+            }
+          }
+        }
+      }
+    }
+
+    console.log("Deleting files from R2:", fileKeys);
+
+    if (fileKeys.length > 0) {
+      const command = new DeleteObjectsCommand({
+        Bucket: process.env.R2_BUCKET_NAME,
+        Delete: {
+          Objects: fileKeys,
+        },
+      });
+
+      await r2Client.send(command);
     }
 
     await deleteChatById({ id });

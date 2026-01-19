@@ -8,7 +8,7 @@ import { Chat } from "@/db/schema";
 import { convertToUIMessages } from "@/lib/utils";
 
 export default async function Page({ params }: { params: any }) {
-  const { id } = params;
+  const { id } = await params;
   const chatFromDb = await getChatById({ id });
 
   if (!chatFromDb) {
