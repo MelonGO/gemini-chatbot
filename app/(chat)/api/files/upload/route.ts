@@ -1,8 +1,17 @@
-import { put } from "@vercel/blob";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { auth } from "@/app/(auth)/auth";
+
+const r2Client = new S3Client({
+  region: "auto",
+  endpoint: process.env.R2_ENDPOINT,
+  credentials: {
+    accessKeyId: process.env.R2_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
+  },
+});
 
 const FileSchema = z.object({
   file: z
@@ -52,12 +61,27 @@ export async function POST(request: Request) {
     const fileBuffer = await file.arrayBuffer();
 
     try {
-      const data = await put(`${filename}`, fileBuffer, {
-        access: "public",
+      const key = `${Date.now()}-${filename}`;
+      const command = new PutObjectCommand({
+        Bucket: process.env.R2_BUCKET_NAME,
+        Key: key,
+        Body: Buffer.from(fileBuffer),
+        ContentType: file.type,
+        ACL: "public-read",
       });
 
-      return NextResponse.json(data);
+      await r2Client.send(command);
+
+      const url = `${process.env.R2_PUBLIC_DOMAIN}/${key}`;
+
+      return NextResponse.json({
+        url,
+        downloadUrl: url,
+        pathname: key,
+        contentType: file.type,
+      });
     } catch (error) {
+      console.error("R2 Upload Error:", error);
       return NextResponse.json({ error: "Upload failed" }, { status: 500 });
     }
   } catch (error) {
