@@ -2,7 +2,7 @@
 
 import { Attachment, Message } from "ai";
 import { useChat } from "ai/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import { models, ModelId } from "@/ai";
 import { Message as PreviewMessage } from "@/components/custom/message";
@@ -22,6 +22,17 @@ export function Chat({
     models[0].id,
   );
 
+  useEffect(() => {
+    const savedModelId = localStorage.getItem("modelId");
+    if (savedModelId && models.some((m) => m.id === savedModelId)) {
+      setSelectedModelId(savedModelId as ModelId);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("modelId", selectedModelId);
+  }, [selectedModelId]);
+
   const { messages, handleSubmit, input, setInput, append, isLoading, stop } =
     useChat({
       id,
@@ -40,10 +51,10 @@ export function Chat({
 
   return (
     <div className="flex flex-row justify-center pb-4 md:pb-8 h-dvh bg-background">
-      <div className="flex flex-col justify-between items-center gap-4">
+      <div className="flex flex-col justify-between items-center gap-4 w-full">
         <div
           ref={messagesContainerRef}
-          className="flex flex-col gap-4 h-full w-dvw items-center overflow-y-scroll"
+          className="flex flex-col gap-4 h-full w-full items-center overflow-y-scroll"
         >
           {messages.length === 0 && <Overview />}
 
@@ -76,7 +87,7 @@ export function Chat({
           />
         </div>
 
-        <form className="flex flex-row gap-2 relative items-end w-full md:max-w-[500px] max-w-[calc(100dvw-32px) px-4 md:px-0">
+        <form className="flex flex-row gap-2 relative items-end w-full md:max-w-3xl lg:max-w-4xl px-4 md:px-0">
           <MultimodalInput
             input={input}
             setInput={setInput}
