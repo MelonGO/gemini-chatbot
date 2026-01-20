@@ -1,11 +1,10 @@
-import { CoreMessage } from "ai";
+import { type UIMessage } from "ai";
 import { notFound } from "next/navigation";
 
 import { auth } from "@/app/(auth)/auth";
 import { Chat as PreviewChat } from "@/components/custom/chat";
 import { getChatById } from "@/db/queries";
 import { Chat } from "@/db/schema";
-import { convertToUIMessages } from "@/lib/utils";
 
 export default async function Page({ params }: { params: any }) {
   const { id } = await params;
@@ -18,7 +17,7 @@ export default async function Page({ params }: { params: any }) {
   // type casting and converting messages to UI messages
   const chat: Chat = {
     ...chatFromDb,
-    messages: convertToUIMessages(chatFromDb.messages as Array<CoreMessage>),
+    messages: chatFromDb.messages as UIMessage[],
   };
 
   const session = await auth();

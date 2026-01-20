@@ -9,7 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@ai-sdk/google": "^0.0.51",
+    "@ai-sdk/google": "^3.0.8",
+    "@ai-sdk/react": "^3.0.44",
     "@aws-sdk/client-s3": "^3.971.0",
     "@radix-ui/react-alert-dialog": "^1.1.2",
     "@radix-ui/react-dialog": "^1.1.2",
@@ -22,7 +23,7 @@
     "@vercel/analytics": "^1.3.1",
     "@vercel/blob": "^0.24.1",
     "@vercel/postgres": "^0.10.0",
-    "ai": "3.4.9",
+    "ai": "^6.0.42",
     "bcrypt-ts": "^5.0.2",
     "class-variance-authority": "^0.7.0",
     "classnames": "^2.5.1",

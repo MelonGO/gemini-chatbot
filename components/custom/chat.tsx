@@ -1,7 +1,7 @@
 "use client";
 
-import { Attachment, Message } from "ai";
-import { useChat } from "ai/react";
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport, UIMessage } from "ai";
 import { useState, useEffect } from "react";
 
 import { models, ModelId } from "@/ai";
@@ -16,8 +16,10 @@ export function Chat({
   initialMessages,
 }: {
   id: string;
-  initialMessages: Array<Message>;
+  initialMessages: Array<UIMessage>;
 }) {
+  const [input, setInput] = useState('');
+
   const [selectedModelId, setSelectedModelId] = useState<ModelId>(
     models[0].id,
   );
@@ -33,12 +35,15 @@ export function Chat({
     localStorage.setItem("modelId", selectedModelId);
   }, [selectedModelId]);
 
-  const { messages, handleSubmit, input, setInput, append, isLoading, stop } =
+  const { messages, sendMessage, stop, status } =
     useChat({
       id,
-      body: { id, modelId: selectedModelId },
-      initialMessages,
-      maxSteps: 10,
+      messages: initialMessages,
+      transport: new DefaultChatTransport({
+        body: { id, modelId: selectedModelId },
+        api: '/api/chat',
+        credentials: 'include',
+      }),
       onFinish: () => {
         window.history.replaceState({}, "", `/chat/${id}`);
       },
@@ -46,8 +51,6 @@ export function Chat({
 
   const [messagesContainerRef, messagesEndRef] =
     useScrollToBottom<HTMLDivElement>();
-
-  const [attachments, setAttachments] = useState<Array<Attachment>>([]);
 
   return (
     <div className="flex flex-row justify-center pb-4 md:pb-8 h-dvh bg-background">
@@ -63,13 +66,17 @@ export function Chat({
               key={message.id}
               chatId={id}
               role={message.role}
-              content={message.content}
-              attachments={message.experimental_attachments}
-              toolInvocations={message.toolInvocations}
+              content={message.parts.map((part) => {
+                if (part.type === "text") {
+                  return part.text;
+                }
+                return "";
+              }).join("")}
+              parts={message.parts}
             />
           ))}
 
-          {isLoading &&
+          {status === "streaming" &&
             messages.length > 0 &&
             messages[messages.length - 1].role === "user" && (
               <PreviewMessage
@@ -77,7 +84,6 @@ export function Chat({
                 role="assistant"
                 content=""
                 isLoading={true}
-                toolInvocations={[]}
               />
             )}
 
@@ -91,13 +97,10 @@ export function Chat({
           <MultimodalInput
             input={input}
             setInput={setInput}
-            handleSubmit={handleSubmit}
-            isLoading={isLoading}
+            sendMessage={sendMessage}
+            isLoading={status === "streaming"}
             stop={stop}
-            attachments={attachments}
-            setAttachments={setAttachments}
             messages={messages}
-            append={append}
             selectedModelId={selectedModelId}
             setSelectedModelId={setSelectedModelId}
           />

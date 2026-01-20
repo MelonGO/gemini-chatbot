@@ -1,4 +1,8 @@
-import { Attachment } from "ai";
+interface Attachment {
+  url: string;
+  name?: string;
+  contentType?: string;
+}
 
 import { FileIcon, LoaderIcon } from "./icons";
 

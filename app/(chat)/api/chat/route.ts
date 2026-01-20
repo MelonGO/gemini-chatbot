@@ -1,5 +1,5 @@
 import { DeleteObjectsCommand } from "@aws-sdk/client-s3";
-import { convertToCoreMessages, Message, streamText } from "ai";
+import { convertToModelMessages, type UIMessage, streamText } from "ai";
 
 import { getModelById } from "@/ai";
 import { auth } from "@/app/(auth)/auth";
@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     id,
     messages,
     modelId,
-  }: { id: string; messages: Array<Message>; modelId: string } =
+  }: { id: string; messages: UIMessage[]; modelId: string } =
     await request.json();
 
   const session = await auth();
@@ -24,19 +24,20 @@ export async function POST(request: Request) {
     return new Response("Unauthorized", { status: 401 });
   }
 
-  const coreMessages = convertToCoreMessages(messages).filter(
-    (message) => message.content.length > 0,
-  );
+  const coreMessages = await convertToModelMessages(messages);
 
-  const result = await streamText({
+  const result = streamText({
     model: getModelById(modelId),
     messages: coreMessages,
-    onFinish: async ({ responseMessages }) => {
+  });
+
+  return result.toUIMessageStreamResponse({
+    onFinish: async ({ responseMessage }) => {
       if (session.user && session.user.id) {
         try {
           await saveChat({
             id,
-            messages: [...coreMessages, ...responseMessages],
+            messages: [...messages, responseMessage],
             userId: session.user.id,
           });
         } catch (error) {
@@ -44,13 +45,7 @@ export async function POST(request: Request) {
         }
       }
     },
-    experimental_telemetry: {
-      isEnabled: true,
-      functionId: "stream-text",
-    },
   });
-
-  return result.toDataStreamResponse({});
 }
 
 export async function DELETE(request: Request) {
@@ -74,7 +69,7 @@ export async function DELETE(request: Request) {
       return new Response("Unauthorized", { status: 401 });
     }
 
-    const messages = chat.messages as Array<Message>;
+    const messages = chat.messages as UIMessage[];
     const fileKeys: Array<{ Key: string }> = [];
 
     const r2PublicDomain = process.env.R2_PUBLIC_DOMAIN
@@ -96,27 +91,19 @@ export async function DELETE(request: Request) {
     };
 
     for (const message of messages) {
-      if (message.experimental_attachments) {
-        for (const attachment of message.experimental_attachments) {
-          if (attachment.url) {
-            addKeyFromUrl(attachment.url);
+      message.parts.map((part, index) => {
+        if (part.type === 'file' && part.mediaType?.startsWith('image/')) {
+          if (part.url) {
+            addKeyFromUrl(part.url);
           }
         }
-      }
 
-      if (Array.isArray(message.content)) {
-        for (const part of message.content) {
-          if (part.type === "image" && part.image) {
-            if (typeof part.image === "string" && part.image.startsWith("http")) {
-              addKeyFromUrl(part.image);
-            }
-          } else if (part.type === "file" && part.data) {
-            if (typeof part.data === "string" && part.data.startsWith("http")) {
-              addKeyFromUrl(part.data);
-            }
+        if (part.type === 'file' && part.mediaType?.startsWith('application/pdf')) {
+          if (part.url) {
+            addKeyFromUrl(part.url);
           }
         }
-      }
+      });
     }
 
     console.log("Deleting files from R2:", fileKeys);

@@ -1,6 +1,6 @@
 "use client";
 
-import { Attachment, ToolInvocation } from "ai";
+import { UIMessagePart } from "ai";
 import { motion } from "framer-motion";
 import { CopyIcon } from "lucide-react";
 import { ReactNode } from "react";
@@ -39,14 +39,13 @@ const CopyButton = ({ content, className }: { content: string; className?: strin
 export const Message = ({
   role,
   content,
-  attachments,
+  parts,
   isLoading,
 }: {
   chatId: string;
   role: string;
   content: string | ReactNode;
-  toolInvocations: Array<ToolInvocation> | undefined;
-  attachments?: Array<Attachment>;
+  parts?: Array<UIMessagePart<any, any>>;
   isLoading?: boolean;
 }) => {
   const isAssistant = role === "assistant";
@@ -77,38 +76,102 @@ export const Message = ({
           isAssistant ? "items-start" : "items-end",
         )}
       >
-        {content && typeof content === "string" && (
+        {parts ? (
           <div
             className={cn(
-              "flex flex-row gap-2 items-start group w-full",
-              isAssistant ? "justify-start" : "justify-end",
+              "flex flex-col gap-2 w-full",
+              isAssistant ? "items-start" : "items-end",
             )}
           >
-            {!isAssistant && (
-              <div className="shrink-0 pt-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
-                <CopyButton content={content} />
-              </div>
-            )}
+            {parts.map((part, index) => {
+              if (part.type === "text") {
+                return (
+                  <div
+                    key={index}
+                    className={cn(
+                      "flex flex-row gap-2 items-start group w-full",
+                      isAssistant ? "justify-start" : "justify-end",
+                    )}
+                  >
+                    {!isAssistant && (
+                      <div className="shrink-0 pt-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
+                        <CopyButton content={part.text} />
+                      </div>
+                    )}
 
+                    <div
+                      className={cn(
+                        "p-3 rounded-2xl text-sm md:text-base shadow-sm overflow-x-auto min-w-0",
+                        isAssistant
+                          ? "bg-muted text-zinc-800 dark:text-zinc-300 rounded-tl-none border border-border"
+                          : "bg-primary text-primary-foreground rounded-tr-none",
+                      )}
+                    >
+                      <div className="flex flex-col gap-4">
+                        <Streamdown>{part.text}</Streamdown>
+                      </div>
+                    </div>
+
+                    {isAssistant && (
+                      <div className="shrink-0 pt-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
+                        <CopyButton content={part.text} />
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
+              if (part.type === "file") {
+                return (
+                  <PreviewAttachment
+                    key={part.url}
+                    attachment={{
+                      url: part.url,
+                      name: part.filename,
+                      contentType: part.mediaType,
+                    }}
+                  />
+                );
+              }
+
+              return null;
+            })}
+          </div>
+        ) : (
+          content &&
+          typeof content === "string" && (
             <div
               className={cn(
-                "p-3 rounded-2xl text-sm md:text-base shadow-sm overflow-x-auto min-w-0",
-                isAssistant
-                  ? "bg-muted text-zinc-800 dark:text-zinc-300 rounded-tl-none border border-border"
-                  : "bg-primary text-primary-foreground rounded-tr-none",
+                "flex flex-row gap-2 items-start group w-full",
+                isAssistant ? "justify-start" : "justify-end",
               )}
             >
-              <div className="flex flex-col gap-4">
-                <Streamdown>{content}</Streamdown>
-              </div>
-            </div>
+              {!isAssistant && (
+                <div className="shrink-0 pt-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
+                  <CopyButton content={content} />
+                </div>
+              )}
 
-            {isAssistant && (
-              <div className="shrink-0 pt-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
-                <CopyButton content={content} />
+              <div
+                className={cn(
+                  "p-3 rounded-2xl text-sm md:text-base shadow-sm overflow-x-auto min-w-0",
+                  isAssistant
+                    ? "bg-muted text-zinc-800 dark:text-zinc-300 rounded-tl-none border border-border"
+                    : "bg-primary text-primary-foreground rounded-tr-none",
+                )}
+              >
+                <div className="flex flex-col gap-4">
+                  <Streamdown>{content}</Streamdown>
+                </div>
               </div>
-            )}
-          </div>
+
+              {isAssistant && (
+                <div className="shrink-0 pt-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
+                  <CopyButton content={content} />
+                </div>
+              )}
+            </div>
+          )
         )}
 
         {isLoading && (
@@ -117,19 +180,6 @@ export const Message = ({
               <LoaderIcon />
             </div>
             <div className="text-sm italic">AI is thinking...</div>
-          </div>
-        )}
-
-        {attachments && (
-          <div
-            className={cn(
-              "flex flex-row gap-2 flex-wrap",
-              isAssistant ? "justify-start" : "justify-end",
-            )}
-          >
-            {attachments.map((attachment) => (
-              <PreviewAttachment key={attachment.url} attachment={attachment} />
-            ))}
           </div>
         )}
       </div>

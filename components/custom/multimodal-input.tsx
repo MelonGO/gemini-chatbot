@@ -1,6 +1,6 @@
 "use client";
 
-import { Attachment, ChatRequestOptions, CreateMessage, Message } from "ai";
+import { UIMessage } from "ai";
 import React, {
   useRef,
   useEffect,
@@ -31,11 +31,8 @@ export function MultimodalInput({
   setInput,
   isLoading,
   stop,
-  attachments,
-  setAttachments,
   messages,
-  append,
-  handleSubmit,
+  sendMessage,
   selectedModelId,
   setSelectedModelId,
 }: {
@@ -43,19 +40,8 @@ export function MultimodalInput({
   setInput: (value: string) => void;
   isLoading: boolean;
   stop: () => void;
-  attachments: Array<Attachment>;
-  setAttachments: Dispatch<SetStateAction<Array<Attachment>>>;
-  messages: Array<Message>;
-  append: (
-    message: Message | CreateMessage,
-    chatRequestOptions?: ChatRequestOptions,
-  ) => Promise<string | null | undefined>;
-  handleSubmit: (
-    event?: {
-      preventDefault?: () => void;
-    },
-    chatRequestOptions?: ChatRequestOptions,
-  ) => void;
+  messages: UIMessage[];
+  sendMessage: (options: { text: string; files?: FileList | undefined }) => void;
   selectedModelId: ModelId;
   setSelectedModelId: Dispatch<SetStateAction<ModelId>>;
 }) {
@@ -87,77 +73,39 @@ export function MultimodalInput({
   };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [uploadQueue, setUploadQueue] = useState<Array<string>>([]);
+  const [files, setFiles] = useState<FileList | undefined>(undefined);
 
   const submitForm = useCallback(() => {
-    handleSubmit(undefined, {
-      experimental_attachments: attachments,
-    });
-
-    setAttachments([]);
-
-    if (width && width > 768) {
-      textareaRef.current?.focus();
-    }
-  }, [attachments, handleSubmit, setAttachments, width]);
-
-  const uploadFile = async (file: File) => {
-    const formData = new FormData();
-    formData.append("file", file);
-
-    try {
-      const response = await fetch(`/api/files/upload`, {
-        method: "POST",
-        body: formData,
+    if (input.trim() || files) {
+      sendMessage({
+        text: input,
+        files,
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        const { url, pathname, contentType } = data;
+      setInput("");
+      setFiles(undefined);
 
-        return {
-          url,
-          name: pathname,
-          contentType: contentType,
-        };
-      } else {
-        const { error } = await response.json();
-        toast.error(error);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
       }
-    } catch (error) {
-      toast.error("Failed to upload file, please try again!");
+
+      if (width && width > 768) {
+        textareaRef.current?.focus();
+      }
     }
-  };
+  }, [input, files, sendMessage, setInput, setFiles, width]);
 
   const handleFileChange = useCallback(
-    async (event: ChangeEvent<HTMLInputElement>) => {
-      const files = Array.from(event.target.files || []);
-
-      setUploadQueue(files.map((file) => file.name));
-
-      try {
-        const uploadPromises = files.map((file) => uploadFile(file));
-        const uploadedAttachments = await Promise.all(uploadPromises);
-        const successfullyUploadedAttachments = uploadedAttachments.filter(
-          (attachment) => attachment !== undefined,
-        );
-
-        setAttachments((currentAttachments) => [
-          ...currentAttachments,
-          ...successfullyUploadedAttachments,
-        ]);
-      } catch (error) {
-        console.error("Error uploading files!", error);
-      } finally {
-        setUploadQueue([]);
+    (event: ChangeEvent<HTMLInputElement>) => {
+      if (event.target.files) {
+        setFiles(event.target.files);
       }
     },
-    [setAttachments],
+    [],
   );
 
   return (
     <div className="relative w-full flex flex-col gap-4">
-
       <input
         type="file"
         className="fixed -top-4 -left-4 size-0.5 opacity-0 pointer-events-none"
@@ -167,21 +115,16 @@ export function MultimodalInput({
         tabIndex={-1}
       />
 
-      {(attachments.length > 0 || uploadQueue.length > 0) && (
+      {files && files.length > 0 && (
         <div className="flex flex-row gap-2 overflow-x-scroll">
-          {attachments.map((attachment) => (
-            <PreviewAttachment key={attachment.url} attachment={attachment} />
-          ))}
-
-          {uploadQueue.map((filename) => (
+          {Array.from(files).map((file) => (
             <PreviewAttachment
-              key={filename}
+              key={file.name}
               attachment={{
-                url: "",
-                name: filename,
-                contentType: "",
+                url: URL.createObjectURL(file),
+                name: file.name,
+                contentType: file.type,
               }}
-              isUploading={true}
             />
           ))}
         </div>
@@ -224,7 +167,7 @@ export function MultimodalInput({
             event.preventDefault();
             submitForm();
           }}
-          disabled={input.length === 0 || uploadQueue.length > 0}
+          disabled={input.length === 0 && !files}
         >
           <ArrowUpIcon size={14} />
         </Button>
