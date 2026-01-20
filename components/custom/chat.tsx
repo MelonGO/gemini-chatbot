@@ -76,7 +76,7 @@ export function Chat({
             />
           ))}
 
-          {status === "streaming" &&
+          {status === "submitted" &&
             messages.length > 0 &&
             messages[messages.length - 1].role === "user" && (
               <PreviewMessage
@@ -98,9 +98,8 @@ export function Chat({
             input={input}
             setInput={setInput}
             sendMessage={sendMessage}
-            isLoading={status === "streaming"}
+            isLoading={status === "submitted"}
             stop={stop}
-            messages={messages}
             selectedModelId={selectedModelId}
             setSelectedModelId={setSelectedModelId}
           />

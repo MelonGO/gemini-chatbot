@@ -1,4 +1,3 @@
-import { DeleteObjectsCommand } from "@aws-sdk/client-s3";
 import { convertToModelMessages, type UIMessage, streamText } from "ai";
 
 import { getModelById } from "@/ai";
@@ -8,7 +7,6 @@ import {
   getChatById,
   saveChat,
 } from "@/db/queries";
-import { r2Client } from "@/lib/r2";
 
 export async function POST(request: Request) {
   const {
@@ -67,56 +65,6 @@ export async function DELETE(request: Request) {
 
     if (!chat || chat.userId !== session.user.id) {
       return new Response("Unauthorized", { status: 401 });
-    }
-
-    const messages = chat.messages as UIMessage[];
-    const fileKeys: Array<{ Key: string }> = [];
-
-    const r2PublicDomain = process.env.R2_PUBLIC_DOMAIN
-      ? new URL(process.env.R2_PUBLIC_DOMAIN).hostname
-      : null;
-
-    const addKeyFromUrl = (urlString: string) => {
-      try {
-        const url = new URL(urlString);
-        if (r2PublicDomain && url.hostname !== r2PublicDomain) return;
-
-        const key = decodeURIComponent(url.pathname.slice(1));
-        if (key && !fileKeys.some((fk) => fk.Key === key)) {
-          fileKeys.push({ Key: key });
-        }
-      } catch (e) {
-        // Not a valid URL
-      }
-    };
-
-    for (const message of messages) {
-      message.parts.map((part, index) => {
-        if (part.type === 'file' && part.mediaType?.startsWith('image/')) {
-          if (part.url) {
-            addKeyFromUrl(part.url);
-          }
-        }
-
-        if (part.type === 'file' && part.mediaType?.startsWith('application/pdf')) {
-          if (part.url) {
-            addKeyFromUrl(part.url);
-          }
-        }
-      });
-    }
-
-    console.log("Deleting files from R2:", fileKeys);
-
-    if (fileKeys.length > 0) {
-      const command = new DeleteObjectsCommand({
-        Bucket: process.env.R2_BUCKET_NAME,
-        Delete: {
-          Objects: fileKeys,
-        },
-      });
-
-      await r2Client.send(command);
     }
 
     await deleteChatById({ id });

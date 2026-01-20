@@ -31,7 +31,6 @@ export function MultimodalInput({
   setInput,
   isLoading,
   stop,
-  messages,
   sendMessage,
   selectedModelId,
   setSelectedModelId,
@@ -40,7 +39,6 @@ export function MultimodalInput({
   setInput: (value: string) => void;
   isLoading: boolean;
   stop: () => void;
-  messages: UIMessage[];
   sendMessage: (options: { text: string; files?: FileList | undefined }) => void;
   selectedModelId: ModelId;
   setSelectedModelId: Dispatch<SetStateAction<ModelId>>;
