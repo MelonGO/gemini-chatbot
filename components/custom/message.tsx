@@ -235,7 +235,7 @@ export const Message = ({
                             onChange={(event) =>
                               onEditChange(event.target.value)
                             }
-                            className="min-h-[200px] text-sm md:text-base"
+                            className="min-h-[400px] text-sm md:text-base"
                             disabled={isSaving}
                           />
                           {renderEditControls()}
@@ -293,7 +293,7 @@ export const Message = ({
                       ref={textareaRef}
                       value={editedText ?? ""}
                       onChange={(event) => onEditChange(event.target.value)}
-                      className="min-h-[200px] text-sm md:text-base"
+                      className="min-h-[400px] text-sm md:text-base"
                       disabled={isSaving}
                     />
                     {renderEditControls()}
