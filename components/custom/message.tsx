@@ -193,7 +193,8 @@ export const Message = ({
                         "p-3 rounded-2xl text-sm md:text-base shadow-sm overflow-x-auto min-w-0",
                         isAssistant
                           ? "bg-muted text-zinc-800 dark:text-zinc-300 rounded-tl-none border border-border"
-                          : "bg-primary text-primary-foreground rounded-tr-none",
+                          : "bg-primary text-secondary-foreground rounded-tr-none",
+                        isEditing && "w-full",
                       )}
                     >
                       {isEditing ? (
@@ -201,7 +202,7 @@ export const Message = ({
                           <Textarea
                             value={editedText ?? ""}
                             onChange={(event) => onEditChange(event.target.value)}
-                            className="min-h-[96px] text-sm md:text-base"
+                            className="min-h-[200px] text-sm md:text-base"
                             disabled={isSaving}
                           />
                           {renderEditControls()}
@@ -256,7 +257,7 @@ export const Message = ({
                     <Textarea
                       value={editedText ?? ""}
                       onChange={(event) => onEditChange(event.target.value)}
-                      className="min-h-[96px] text-sm md:text-base"
+                      className="min-h-[200px] text-sm md:text-base"
                       disabled={isSaving}
                     />
                     {renderEditControls()}
