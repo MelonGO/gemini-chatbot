@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { BotIcon, UserIcon, LoaderIcon } from "./icons";
 import { PreviewAttachment } from "./preview-attachment";
 import { Button } from "../ui/button";
+import { Textarea } from "../ui/textarea";
 
 const CopyButton = ({ content, className }: { content: string; className?: string }) => {
   const [_, copy] = useCopyToClipboard();
@@ -36,19 +37,111 @@ const CopyButton = ({ content, className }: { content: string; className?: strin
   );
 };
 
+type MessageProps =
+  | {
+      chatId?: string;
+      role: string;
+      content: string | ReactNode;
+      parts?: Array<UIMessagePart<any, any>>;
+      isLoading?: boolean;
+      isEditing?: false;
+      isSaving?: boolean;
+      editedText?: string;
+      onEditStart?: () => void;
+      onEditCancel?: () => void;
+      onEditChange?: (value: string) => void;
+      onEditSave?: () => void;
+      onDelete?: () => void;
+    }
+  | {
+      chatId?: string;
+      role: string;
+      content: string | ReactNode;
+      parts?: Array<UIMessagePart<any, any>>;
+      isLoading?: boolean;
+      isEditing: true;
+      isSaving?: boolean;
+      editedText: string;
+      onEditStart: () => void;
+      onEditCancel: () => void;
+      onEditChange: (value: string) => void;
+      onEditSave: () => void;
+      onDelete: () => void;
+    };
+
 export const Message = ({
   role,
   content,
   parts,
   isLoading,
-}: {
-  chatId: string;
-  role: string;
-  content: string | ReactNode;
-  parts?: Array<UIMessagePart<any, any>>;
-  isLoading?: boolean;
-}) => {
+  isEditing,
+  isSaving,
+  editedText,
+  onEditStart,
+  onEditCancel,
+  onEditChange,
+  onEditSave,
+  onDelete,
+}: MessageProps) => {
   const isAssistant = role === "assistant";
+  const canEdit = typeof content === "string";
+  const isEditable = Boolean(onEditSave && onEditCancel && onEditChange);
+
+  const renderActions = (text: string) => (
+    <div className="flex flex-row gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
+      <CopyButton content={text} />
+      {canEdit && !isEditing && isEditable && onEditStart && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={onEditStart}
+          className="h-8 px-2 text-[11px] font-medium text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+        >
+          Edit
+        </Button>
+      )}
+      {canEdit && !isEditing && isEditable && onDelete && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={onDelete}
+          className="h-8 px-2 text-[11px] font-medium text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+        >
+          Delete
+        </Button>
+      )}
+    </div>
+  );
+
+  const renderEditControls = () => {
+    if (!isEditable || !onEditSave || !onEditCancel) {
+      return null;
+    }
+
+    return (
+      <div className="flex flex-row gap-2">
+        <Button
+          type="button"
+          size="sm"
+          onClick={onEditSave}
+          disabled={isSaving || !editedText?.trim()}
+        >
+          Save
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={onEditCancel}
+          disabled={isSaving}
+        >
+          Cancel
+        </Button>
+      </div>
+    );
+  };
 
   return (
     <motion.div
@@ -89,15 +182,11 @@ export const Message = ({
                   <div
                     key={index}
                     className={cn(
-                      "flex flex-row gap-2 items-start group w-full",
-                      isAssistant ? "justify-start" : "justify-end",
+                      "flex flex-col gap-1 group w-full",
+                      isAssistant ? "items-start" : "items-end",
                     )}
                   >
-                    {!isAssistant && (
-                      <div className="shrink-0 pt-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
-                        <CopyButton content={part.text} />
-                      </div>
-                    )}
+                    {renderActions(part.text)}
 
                     <div
                       className={cn(
@@ -107,16 +196,22 @@ export const Message = ({
                           : "bg-primary text-primary-foreground rounded-tr-none",
                       )}
                     >
-                      <div className="flex flex-col gap-4">
-                        <Streamdown>{part.text}</Streamdown>
-                      </div>
+                      {isEditing ? (
+                        <div className="flex flex-col gap-3">
+                          <Textarea
+                            value={editedText ?? ""}
+                            onChange={(event) => onEditChange(event.target.value)}
+                            className="min-h-[96px] text-sm md:text-base"
+                            disabled={isSaving}
+                          />
+                          {renderEditControls()}
+                        </div>
+                      ) : (
+                        <div className="flex flex-col gap-4">
+                          <Streamdown>{part.text}</Streamdown>
+                        </div>
+                      )}
                     </div>
-
-                    {isAssistant && (
-                      <div className="shrink-0 pt-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
-                        <CopyButton content={part.text} />
-                      </div>
-                    )}
                   </div>
                 );
               }
@@ -142,15 +237,11 @@ export const Message = ({
           typeof content === "string" && (
             <div
               className={cn(
-                "flex flex-row gap-2 items-start group w-full",
-                isAssistant ? "justify-start" : "justify-end",
+                "flex flex-col gap-1 group w-full",
+                isAssistant ? "items-start" : "items-end",
               )}
             >
-              {!isAssistant && (
-                <div className="shrink-0 pt-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
-                  <CopyButton content={content} />
-                </div>
-              )}
+              {renderActions(content)}
 
               <div
                 className={cn(
@@ -160,16 +251,22 @@ export const Message = ({
                     : "bg-primary text-primary-foreground rounded-tr-none",
                 )}
               >
-                <div className="flex flex-col gap-4">
-                  <Streamdown>{content}</Streamdown>
-                </div>
+                {isEditing ? (
+                  <div className="flex flex-col gap-3">
+                    <Textarea
+                      value={editedText ?? ""}
+                      onChange={(event) => onEditChange(event.target.value)}
+                      className="min-h-[96px] text-sm md:text-base"
+                      disabled={isSaving}
+                    />
+                    {renderEditControls()}
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-4">
+                    <Streamdown>{content}</Streamdown>
+                  </div>
+                )}
               </div>
-
-              {isAssistant && (
-                <div className="shrink-0 pt-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
-                  <CopyButton content={content} />
-                </div>
-              )}
             </div>
           )
         )}

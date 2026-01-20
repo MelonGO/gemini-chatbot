@@ -1,8 +1,9 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport, UIMessage } from "ai";
+import { DefaultChatTransport, UIMessage, UIMessagePart } from "ai";
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 
 import { models, ModelId } from "@/ai";
 import { Message as PreviewMessage } from "@/components/custom/message";
@@ -35,7 +36,7 @@ export function Chat({
     localStorage.setItem("modelId", selectedModelId);
   }, [selectedModelId]);
 
-  const { messages, sendMessage, stop, status } =
+  const { messages, sendMessage, stop, status, setMessages } =
     useChat({
       id,
       messages: initialMessages,
@@ -44,6 +45,9 @@ export function Chat({
         api: '/api/chat',
         credentials: 'include',
       }),
+      onError: () => {
+        toast.error("Something went wrong. Please try again.");
+      },
       onFinish: () => {
         window.history.replaceState({}, "", `/chat/${id}`);
       },
@@ -51,6 +55,102 @@ export function Chat({
 
   const [messagesContainerRef, messagesEndRef] =
     useScrollToBottom<HTMLDivElement>();
+
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [draftText, setDraftText] = useState("");
+  const [savingMessageId, setSavingMessageId] = useState<string | null>(null);
+
+  const extractText = (message: UIMessage) => {
+    if (message.parts && message.parts.length > 0) {
+      return message.parts
+        .filter((part) => part.type === "text")
+        .map((part) => part.text)
+        .join("");
+    }
+
+    return "";
+  };
+
+  const updateMessageText = (message: UIMessage, nextText: string) => {
+    const textPart = {
+      type: "text",
+      text: nextText,
+    } as UIMessagePart<any, any>;
+
+    if (message.parts && message.parts.length > 0) {
+      const hasTextPart = message.parts.some((part) => part.type === "text");
+      const nextParts = message.parts.map((part) =>
+        part.type === "text"
+          ? ({ ...part, text: nextText } as UIMessagePart<any, any>)
+          : (part as UIMessagePart<any, any>),
+      );
+
+      if (!hasTextPart) {
+        nextParts.push(textPart as UIMessagePart<any, any>);
+      }
+
+      return { ...message, parts: nextParts as UIMessagePart<any, any>[] };
+    }
+
+    return {
+      ...message,
+      parts: [textPart as UIMessagePart<any, any>],
+    } as UIMessage;
+  };
+
+  const persistMessages = async (nextMessages: UIMessage[], fallback: UIMessage[]) => {
+    try {
+      const response = await fetch(`/api/chat?id=${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: nextMessages }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update messages");
+      }
+    } catch (error) {
+      setMessages(fallback);
+      toast.error("Failed to update message. Please try again.");
+    } finally {
+      setSavingMessageId(null);
+    }
+  };
+
+  const handleEditStart = (message: UIMessage) => {
+    setEditingMessageId(message.id);
+    setDraftText(extractText(message));
+  };
+
+  const handleEditCancel = () => {
+    setEditingMessageId(null);
+    setDraftText("");
+  };
+
+  const handleEditSave = async (messageId: string) => {
+    const previousMessages = messages;
+    const nextMessages = messages.map((message) =>
+      message.id === messageId ? updateMessageText(message, draftText) : message,
+    ) as UIMessage[];
+
+    setMessages(nextMessages);
+    setEditingMessageId(null);
+    setSavingMessageId(messageId);
+    setDraftText("");
+
+    await persistMessages(nextMessages, previousMessages);
+  };
+
+  const handleDelete = async (messageId: string) => {
+    const previousMessages = messages;
+    const nextMessages = messages.filter((message) => message.id !== messageId) as UIMessage[];
+
+    setMessages(nextMessages);
+    setEditingMessageId(null);
+    setSavingMessageId(messageId);
+
+    await persistMessages(nextMessages, previousMessages);
+  };
 
   return (
     <div className="flex flex-row justify-center pb-4 md:pb-8 h-dvh bg-background">
@@ -73,6 +173,14 @@ export function Chat({
                 return "";
               }).join("")}
               parts={message.parts}
+              isEditing={editingMessageId === message.id}
+              isSaving={savingMessageId === message.id}
+              editedText={draftText}
+              onEditStart={() => handleEditStart(message)}
+              onEditCancel={handleEditCancel}
+              onEditChange={setDraftText}
+              onEditSave={() => handleEditSave(message.id)}
+              onDelete={() => handleDelete(message.id)}
             />
           ))}
 
