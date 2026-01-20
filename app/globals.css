@@ -128,3 +128,19 @@
         @apply bg-foreground/20 animate-pulse;
     }
 }
+
+/* Custom styles for message content */
+pre {
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+code {
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+pre code {
+    white-space: pre;
+    word-break: normal;
+}

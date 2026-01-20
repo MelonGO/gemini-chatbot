@@ -146,7 +146,7 @@ export const Message = ({
   return (
     <motion.div
       className={cn(
-        "flex flex-row gap-3 px-4 w-full max-w-3xl md:max-w-4xl lg:max-w-5xl first-of-type:pt-20",
+        "flex flex-row gap-3 px-4 w-full max-w-3xl md:max-w-4xl lg:max-w-5xl first-of-type:pt-20 min-w-0",
         isAssistant ? "justify-start" : "flex-row-reverse",
       )}
       initial={{ y: 5, opacity: 0 }}
@@ -182,15 +182,15 @@ export const Message = ({
                   <div
                     key={index}
                     className={cn(
-                      "flex flex-row gap-2 items-start group w-full",
-                      isAssistant ? "justify-start" : "justify-end",
+                      "flex flex-col gap-2 group w-full",
+                      isAssistant ? "items-start" : "items-end",
                     )}
                   >
                     {renderActions(part.text)}
 
                     <div
                       className={cn(
-                        "p-3 rounded-2xl text-sm md:text-base shadow-sm overflow-x-auto min-w-0",
+                        "p-3 rounded-2xl text-sm md:text-base shadow-sm overflow-x-auto min-w-0 max-w-full break-words",
                         isAssistant
                           ? "bg-muted text-zinc-800 dark:text-zinc-300 rounded-tl-none border border-border"
                           : "bg-primary text-secondary-foreground rounded-tr-none",
@@ -238,15 +238,15 @@ export const Message = ({
           typeof content === "string" && (
             <div
               className={cn(
-                "flex flex-row gap-2 items-start group w-full",
-                isAssistant ? "justify-start" : "justify-end",
+                "flex flex-col gap-2 group w-full",
+                isAssistant ? "items-start" : "items-end",
               )}
             >
               {renderActions(content)}
 
               <div
                 className={cn(
-                  "p-3 rounded-2xl text-sm md:text-base shadow-sm overflow-x-auto min-w-0",
+                  "p-3 rounded-2xl text-sm md:text-base shadow-sm overflow-x-auto min-w-0 max-w-full break-words",
                   isAssistant
                     ? "bg-muted text-zinc-800 dark:text-zinc-300 rounded-tl-none border border-border"
                     : "bg-primary text-primary-foreground rounded-tr-none",
