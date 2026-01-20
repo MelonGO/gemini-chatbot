@@ -3,7 +3,7 @@
 import { UIMessagePart } from "ai";
 import { motion } from "framer-motion";
 import { CopyIcon } from "lucide-react";
-import { ReactNode, useEffect, useRef } from "react"; // 1. Added imports
+import { ReactNode, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { Streamdown } from "streamdown";
 import { useCopyToClipboard } from "usehooks-ts";
@@ -93,10 +93,8 @@ export const Message = ({
   // Programmatically focus when entering edit mode
   useEffect(() => {
     if (isEditing && textareaRef.current) {
-      // Use setTimeout to ensure the element is painted by Framer Motion/React before focusing
       setTimeout(() => {
         textareaRef.current?.focus();
-        // Optional: Move cursor to the end of the text
         const length = textareaRef.current?.value.length || 0;
         textareaRef.current?.setSelectionRange(length, length);
       }, 50);
@@ -206,7 +204,9 @@ export const Message = ({
 
                     <div
                       className={cn(
-                        "p-3 rounded-2xl text-sm md:text-base shadow-sm overflow-x-auto min-w-0 max-w-full break-words",
+                        "p-3 rounded-2xl text-sm md:text-base shadow-sm min-w-0 max-w-full",
+                        // Only apply overflow-x-auto and break-words when NOT editing
+                        !isEditing && "overflow-x-auto break-words",
                         isAssistant
                           ? "bg-muted text-zinc-800 dark:text-zinc-300 rounded-tl-none border border-border"
                           : "bg-primary text-secondary-foreground rounded-tr-none",
@@ -218,7 +218,9 @@ export const Message = ({
                           <Textarea
                             ref={textareaRef}
                             value={editedText ?? ""}
-                            onChange={(event) => onEditChange(event.target.value)}
+                            onChange={(event) =>
+                              onEditChange(event.target.value)
+                            }
                             className="min-h-[200px] text-sm md:text-base"
                             disabled={isSaving}
                           />
@@ -263,7 +265,9 @@ export const Message = ({
 
               <div
                 className={cn(
-                  "p-3 rounded-2xl text-sm md:text-base shadow-sm overflow-x-auto min-w-0 max-w-full break-words",
+                  "p-3 rounded-2xl text-sm md:text-base shadow-sm min-w-0 max-w-full",
+                  // Only apply overflow-x-auto and break-words when NOT editing
+                  !isEditing && "overflow-x-auto break-words",
                   isAssistant
                     ? "bg-muted text-zinc-800 dark:text-zinc-300 rounded-tl-none border border-border"
                     : "bg-primary text-primary-foreground rounded-tr-none",
