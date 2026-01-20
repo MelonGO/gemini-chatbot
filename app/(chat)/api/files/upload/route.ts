@@ -8,8 +8,8 @@ import { r2Client } from "@/lib/r2";
 const FileSchema = z.object({
   file: z
     .instanceof(File)
-    .refine((file) => file.size <= 5 * 1024 * 1024, {
-      message: "File size should be less than 5MB",
+    .refine((file) => file.size <= 50 * 1024 * 1024, {
+      message: "File size should be less than 50MB",
     })
     .refine(
       (file) =>
