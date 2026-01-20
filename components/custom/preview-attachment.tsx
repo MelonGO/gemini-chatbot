@@ -4,14 +4,17 @@ interface Attachment {
   contentType?: string;
 }
 
-import { FileIcon, LoaderIcon } from "./icons";
+import { CrossIcon, FileIcon, LoaderIcon } from "./icons";
+import { Button } from "../ui/button";
 
 export const PreviewAttachment = ({
   attachment,
   isUploading = false,
+  onRemove,
 }: {
   attachment: Attachment;
   isUploading?: boolean;
+  onRemove?: () => void;
 }) => {
   const { name, url, contentType } = attachment;
 
@@ -54,6 +57,18 @@ export const PreviewAttachment = ({
           >
             <span className="sr-only">View attachment</span>
           </a>
+        )}
+
+        {onRemove && (
+          <Button
+            className="absolute -top-1.5 -right-1.5 rounded-full p-0.5 h-fit bg-zinc-900 text-zinc-100 hover:bg-zinc-800 border dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 z-20"
+            onClick={(event) => {
+              event.preventDefault();
+              onRemove();
+            }}
+          >
+            <CrossIcon size={12} />
+          </Button>
         )}
       </div>
 

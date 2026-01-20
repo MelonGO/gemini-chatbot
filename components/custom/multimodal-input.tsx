@@ -26,6 +26,11 @@ import {
 } from "../ui/dropdown-menu";
 import { Textarea } from "../ui/textarea";
 
+interface FileWithPreview {
+  file: File;
+  url: string;
+}
+
 export function MultimodalInput({
   input,
   setInput,
@@ -71,17 +76,21 @@ export function MultimodalInput({
   };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [files, setFiles] = useState<FileList | undefined>(undefined);
+  const [files, setFiles] = useState<FileWithPreview[]>([]);
 
   const submitForm = useCallback(() => {
-    if (input.trim() || files) {
+    if (input.trim() || files.length > 0) {
+      const dataTransfer = new DataTransfer();
+      files.forEach((f) => dataTransfer.items.add(f.file));
+
       sendMessage({
         text: input,
-        files,
+        files: dataTransfer.files,
       });
 
       setInput("");
-      setFiles(undefined);
+      files.forEach((f) => URL.revokeObjectURL(f.url));
+      setFiles([]);
 
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
@@ -96,10 +105,22 @@ export function MultimodalInput({
   const handleFileChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
       if (event.target.files) {
-        setFiles(event.target.files);
+        const newFiles = Array.from(event.target.files).map((file) => ({
+          file,
+          url: URL.createObjectURL(file),
+        }));
+        setFiles((prevFiles) => [...prevFiles, ...newFiles]);
       }
     },
     [],
+  );
+
+  const removeFile = useCallback(
+    (fileWithPreview: FileWithPreview) => {
+      URL.revokeObjectURL(fileWithPreview.url);
+      setFiles((prevFiles) => prevFiles.filter((f) => f !== fileWithPreview));
+    },
+    [setFiles],
   );
 
   return (
@@ -113,16 +134,17 @@ export function MultimodalInput({
         tabIndex={-1}
       />
 
-      {files && files.length > 0 && (
+      {files.length > 0 && (
         <div className="flex flex-row gap-2 overflow-x-scroll">
-          {Array.from(files).map((file) => (
+          {files.map((fileWithPreview) => (
             <PreviewAttachment
-              key={file.name}
+              key={fileWithPreview.url}
               attachment={{
-                url: URL.createObjectURL(file),
-                name: file.name,
-                contentType: file.type,
+                url: fileWithPreview.url,
+                name: fileWithPreview.file.name,
+                contentType: fileWithPreview.file.type,
               }}
+              onRemove={() => removeFile(fileWithPreview)}
             />
           ))}
         </div>
@@ -165,7 +187,7 @@ export function MultimodalInput({
             event.preventDefault();
             submitForm();
           }}
-          disabled={input.length === 0 && !files}
+          disabled={input.length === 0 && files.length === 0}
         >
           <ArrowUpIcon size={14} />
         </Button>
