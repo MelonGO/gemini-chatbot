@@ -36,7 +36,7 @@ export function Chat({
     localStorage.setItem("modelId", selectedModelId);
   }, [selectedModelId]);
 
-  const { messages, sendMessage, stop, status, setMessages } =
+  const { messages, sendMessage, stop, regenerate, status, setMessages } =
     useChat({
       id,
       messages: initialMessages,
@@ -161,7 +161,7 @@ export function Chat({
         >
           {messages.length === 0 && <Overview />}
 
-          {messages.map((message) => (
+          {messages.map((message, index) => (
             <PreviewMessage
               key={message.id}
               chatId={id}
@@ -181,6 +181,12 @@ export function Chat({
               onEditChange={setDraftText}
               onEditSave={() => handleEditSave(message.id)}
               onDelete={() => handleDelete(message.id)}
+              onRegenerate={
+                message.role === "assistant" &&
+                  index === messages.length - 1
+                  ? () => regenerate()
+                  : undefined
+              }
             />
           ))}
 

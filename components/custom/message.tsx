@@ -2,7 +2,7 @@
 
 import { UIMessagePart } from "ai";
 import { motion } from "framer-motion";
-import { CopyIcon } from "lucide-react";
+import { CopyIcon, RefreshCcw } from "lucide-react";
 import { ReactNode, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { Streamdown } from "streamdown";
@@ -52,6 +52,7 @@ type MessageProps =
     onEditChange?: (value: string) => void;
     onEditSave?: () => void;
     onDelete?: () => void;
+    onRegenerate?: () => void;
   }
   | {
     chatId?: string;
@@ -67,6 +68,7 @@ type MessageProps =
     onEditChange: (value: string) => void;
     onEditSave: () => void;
     onDelete: () => void;
+    onRegenerate?: () => void;
   };
 
 export const Message = ({
@@ -82,6 +84,7 @@ export const Message = ({
   onEditChange,
   onEditSave,
   onDelete,
+  onRegenerate,
 }: MessageProps) => {
   const isAssistant = role === "assistant";
   const canEdit = typeof content === "string";
@@ -124,6 +127,17 @@ export const Message = ({
           className="h-8 px-2 text-[11px] font-medium text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
         >
           Delete
+        </Button>
+      )}
+      {isAssistant && !isEditing && onRegenerate && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+          onClick={onRegenerate}
+        >
+          <RefreshCcw size={14} />
         </Button>
       )}
     </div>
