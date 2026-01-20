@@ -39,35 +39,35 @@ const CopyButton = ({ content, className }: { content: string; className?: strin
 
 type MessageProps =
   | {
-      chatId?: string;
-      role: string;
-      content: string | ReactNode;
-      parts?: Array<UIMessagePart<any, any>>;
-      isLoading?: boolean;
-      isEditing?: false;
-      isSaving?: boolean;
-      editedText?: string;
-      onEditStart?: () => void;
-      onEditCancel?: () => void;
-      onEditChange?: (value: string) => void;
-      onEditSave?: () => void;
-      onDelete?: () => void;
-    }
+    chatId?: string;
+    role: string;
+    content: string | ReactNode;
+    parts?: Array<UIMessagePart<any, any>>;
+    isLoading?: boolean;
+    isEditing?: false;
+    isSaving?: boolean;
+    editedText?: string;
+    onEditStart?: () => void;
+    onEditCancel?: () => void;
+    onEditChange?: (value: string) => void;
+    onEditSave?: () => void;
+    onDelete?: () => void;
+  }
   | {
-      chatId?: string;
-      role: string;
-      content: string | ReactNode;
-      parts?: Array<UIMessagePart<any, any>>;
-      isLoading?: boolean;
-      isEditing: true;
-      isSaving?: boolean;
-      editedText: string;
-      onEditStart: () => void;
-      onEditCancel: () => void;
-      onEditChange: (value: string) => void;
-      onEditSave: () => void;
-      onDelete: () => void;
-    };
+    chatId?: string;
+    role: string;
+    content: string | ReactNode;
+    parts?: Array<UIMessagePart<any, any>>;
+    isLoading?: boolean;
+    isEditing: true;
+    isSaving?: boolean;
+    editedText: string;
+    onEditStart: () => void;
+    onEditCancel: () => void;
+    onEditChange: (value: string) => void;
+    onEditSave: () => void;
+    onDelete: () => void;
+  };
 
 export const Message = ({
   role,
@@ -182,8 +182,8 @@ export const Message = ({
                   <div
                     key={index}
                     className={cn(
-                      "flex flex-col gap-1 group w-full",
-                      isAssistant ? "items-start" : "items-end",
+                      "flex flex-row gap-2 items-start group w-full",
+                      isAssistant ? "justify-start" : "justify-end",
                     )}
                   >
                     {renderActions(part.text)}
@@ -238,8 +238,8 @@ export const Message = ({
           typeof content === "string" && (
             <div
               className={cn(
-                "flex flex-col gap-1 group w-full",
-                isAssistant ? "items-start" : "items-end",
+                "flex flex-row gap-2 items-start group w-full",
+                isAssistant ? "justify-start" : "justify-end",
               )}
             >
               {renderActions(content)}
