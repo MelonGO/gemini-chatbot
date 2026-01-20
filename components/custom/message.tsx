@@ -3,7 +3,7 @@
 import { UIMessagePart } from "ai";
 import { motion } from "framer-motion";
 import { CopyIcon } from "lucide-react";
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useRef } from "react"; // 1. Added imports
 import { toast } from "sonner";
 import { Streamdown } from "streamdown";
 import { useCopyToClipboard } from "usehooks-ts";
@@ -86,6 +86,22 @@ export const Message = ({
   const isAssistant = role === "assistant";
   const canEdit = typeof content === "string";
   const isEditable = Boolean(onEditSave && onEditCancel && onEditChange);
+
+  // Create a ref for the textarea
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Programmatically focus when entering edit mode
+  useEffect(() => {
+    if (isEditing && textareaRef.current) {
+      // Use setTimeout to ensure the element is painted by Framer Motion/React before focusing
+      setTimeout(() => {
+        textareaRef.current?.focus();
+        // Optional: Move cursor to the end of the text
+        const length = textareaRef.current?.value.length || 0;
+        textareaRef.current?.setSelectionRange(length, length);
+      }, 50);
+    }
+  }, [isEditing]);
 
   const renderActions = (text: string) => (
     <div className="flex flex-row gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
@@ -200,6 +216,7 @@ export const Message = ({
                       {isEditing ? (
                         <div className="flex flex-col gap-3">
                           <Textarea
+                            ref={textareaRef}
                             value={editedText ?? ""}
                             onChange={(event) => onEditChange(event.target.value)}
                             className="min-h-[200px] text-sm md:text-base"
@@ -255,6 +272,7 @@ export const Message = ({
                 {isEditing ? (
                   <div className="flex flex-col gap-3">
                     <Textarea
+                      ref={textareaRef}
                       value={editedText ?? ""}
                       onChange={(event) => onEditChange(event.target.value)}
                       className="min-h-[200px] text-sm md:text-base"
