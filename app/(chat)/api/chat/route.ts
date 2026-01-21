@@ -1,4 +1,9 @@
-import { convertToModelMessages, type UIMessage, streamText } from "ai";
+import {
+  convertToModelMessages,
+  type UIMessage,
+  streamText,
+  generateId,
+} from "ai";
 
 import { getModelById } from "@/ai";
 import { auth } from "@/app/(auth)/auth";
@@ -23,6 +28,7 @@ export async function POST(request: Request) {
   }
 
   const coreMessages = await convertToModelMessages(messages);
+  const messageId = generateId();
 
   const result = streamText({
     model: getModelById(modelId),
@@ -30,6 +36,7 @@ export async function POST(request: Request) {
   });
 
   return result.toUIMessageStreamResponse({
+    generateMessageId: () => messageId,
     onError: (error) => {
       console.error("Error during message streaming:", error);
       return "Error: " + (error as Error).message;
@@ -37,12 +44,12 @@ export async function POST(request: Request) {
     onFinish: async ({ responseMessage }) => {
       if (session.user && session.user.id) {
         try {
-          if (responseMessage.id === '') {
-            throw new Error("Response message ID is empty");
-          }
           await saveChat({
             id,
-            messages: [...messages, responseMessage],
+            messages: [
+              ...messages,
+              { ...responseMessage, id: messageId } as UIMessage,
+            ],
             userId: session.user.id,
           });
         } catch (error) {

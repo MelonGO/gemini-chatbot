@@ -1,5 +1,4 @@
 import {
-  convertToModelMessages,
   UIMessage,
 } from "ai";
 import { clsx, type ClassValue } from "clsx";
