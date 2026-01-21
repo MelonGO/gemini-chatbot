@@ -96,13 +96,17 @@ export const Message = ({
   // Programmatically focus when entering edit mode
   useEffect(() => {
     if (isEditing && textareaRef.current) {
-      setTimeout(() => {
-        textareaRef.current?.focus();
-        const length = textareaRef.current?.value.length || 0;
-        textareaRef.current?.setSelectionRange(length, length);
-      }, 50);
+      const timer = setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.focus();
+          const length = textareaRef.current.value.length;
+          textareaRef.current.setSelectionRange(length, length);
+        }
+      }, 100);
+      return () => clearTimeout(timer);
     }
   }, [isEditing]);
+
 
   const renderActions = (text: string) => (
     <div className="flex flex-row gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
@@ -235,7 +239,7 @@ export const Message = ({
                             onChange={(event) =>
                               onEditChange(event.target.value)
                             }
-                            className="min-h-[400px] text-sm md:text-base"
+                            className="min-h-[100px] text-sm md:text-base"
                             disabled={isSaving}
                           />
                           {renderEditControls()}
