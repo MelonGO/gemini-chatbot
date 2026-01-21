@@ -133,7 +133,7 @@ export const Message = ({
           Delete
         </Button>
       )}
-      {isAssistant && !isEditing && onRegenerate && (
+      {!isEditing && onRegenerate && (
         <Button
           type="button"
           variant="ghost"

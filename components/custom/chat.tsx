@@ -45,8 +45,8 @@ export function Chat({
         api: '/api/chat',
         credentials: 'include',
       }),
-      onError: () => {
-        toast.error("Something went wrong. Please try again.");
+      onError: (error) => {
+        toast.error("Something went wrong: " + (error as Error).message);
       },
       onFinish: () => {
         window.history.replaceState({}, "", `/chat/${id}`);
@@ -152,6 +152,28 @@ export function Chat({
     await persistMessages(nextMessages, previousMessages);
   };
 
+  const handleRegenerate = async (index: number) => {
+    stop();
+
+    const previousMessages = messages;
+    const messageToRegenerate = messages[index];
+
+    // If regenerating an assistant message, we keep everything up to the previous message (the user prompt)
+    // If regenerating a user message, we keep everything up to that message
+    const truncateIndex = messageToRegenerate.role === "assistant" ? index : index + 1;
+    const nextMessages = messages.slice(0, truncateIndex);
+
+    setMessages(nextMessages);
+
+    await persistMessages(nextMessages, previousMessages);
+
+    try {
+      await regenerate();
+    } catch (error) {
+      toast.error("Failed to regenerate message: " + (error as Error).message);
+    }
+  };
+
   return (
     <div className="flex flex-row justify-center pb-4 md:pb-8 h-dvh bg-background">
       <div className="flex flex-col justify-between items-center gap-4 w-full">
@@ -181,12 +203,7 @@ export function Chat({
               onEditChange={setDraftText}
               onEditSave={() => handleEditSave(message.id)}
               onDelete={() => handleDelete(message.id)}
-              onRegenerate={
-                message.role === "assistant" &&
-                  index === messages.length - 1
-                  ? () => regenerate()
-                  : undefined
-              }
+              onRegenerate={() => handleRegenerate(index)}
             />
           ))}
 

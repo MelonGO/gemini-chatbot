@@ -30,9 +30,16 @@ export async function POST(request: Request) {
   });
 
   return result.toUIMessageStreamResponse({
+    onError: (error) => {
+      console.error("Error during message streaming:", error);
+      return "Error: " + (error as Error).message;
+    },
     onFinish: async ({ responseMessage }) => {
       if (session.user && session.user.id) {
         try {
+          if (responseMessage.id === '') {
+            throw new Error("Response message ID is empty");
+          }
           await saveChat({
             id,
             messages: [...messages, responseMessage],
