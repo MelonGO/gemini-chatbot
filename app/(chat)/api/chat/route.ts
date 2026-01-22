@@ -11,6 +11,7 @@ import {
   deleteChatById,
   getChatById,
   saveChat,
+  getSystemPromptById,
 } from "@/db/queries";
 
 export async function POST(request: Request) {
@@ -18,8 +19,13 @@ export async function POST(request: Request) {
     id,
     messages,
     modelId,
-  }: { id: string; messages: UIMessage[]; modelId: string } =
-    await request.json();
+    systemPromptId,
+  }: {
+    id: string;
+    messages: UIMessage[];
+    modelId: string;
+    systemPromptId?: string;
+  } = await request.json();
 
   const session = await auth();
 
@@ -27,11 +33,20 @@ export async function POST(request: Request) {
     return new Response("Unauthorized", { status: 401 });
   }
 
+  let systemMessage: string | undefined;
+  if (systemPromptId && session.user?.id) {
+    const prompt = await getSystemPromptById({ id: systemPromptId });
+    if (prompt && prompt.userId === session.user.id) {
+      systemMessage = prompt.content;
+    }
+  }
+
   const coreMessages = await convertToModelMessages(messages);
   const messageId = generateId();
 
   const result = streamText({
     model: getModelById(modelId),
+    system: systemMessage,
     messages: coreMessages,
   });
 
@@ -51,6 +66,7 @@ export async function POST(request: Request) {
               { ...responseMessage, id: messageId } as UIMessage,
             ],
             userId: session.user.id,
+            systemPromptId,
           });
         } catch (error) {
           console.error("Failed to save chat");

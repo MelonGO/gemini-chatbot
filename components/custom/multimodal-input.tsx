@@ -39,14 +39,19 @@ export function MultimodalInput({
   sendMessage,
   selectedModelId,
   setSelectedModelId,
+  systemPromptId,
 }: {
   input: string;
   setInput: (value: string) => void;
   isLoading: boolean;
   stop: () => void;
-  sendMessage: (options: { text: string; files?: FileList | undefined }) => void;
+  sendMessage: (
+    options: { text: string; files?: FileList | undefined },
+    requestOptions?: { body?: Record<string, unknown> }
+  ) => void;
   selectedModelId: ModelId;
   setSelectedModelId: Dispatch<SetStateAction<ModelId>>;
+  systemPromptId: string | null;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { width } = useWindowSize();
@@ -83,10 +88,17 @@ export function MultimodalInput({
       const dataTransfer = new DataTransfer();
       files.forEach((f) => dataTransfer.items.add(f.file));
 
-      sendMessage({
-        text: input,
-        files: dataTransfer.files,
-      });
+      sendMessage(
+        {
+          text: input,
+          files: dataTransfer.files,
+        },
+        {
+          body: {
+            systemPromptId,
+          },
+        }
+      );
 
       setInput("");
       files.forEach((f) => URL.revokeObjectURL(f.url));
@@ -100,7 +112,7 @@ export function MultimodalInput({
         textareaRef.current?.focus();
       }
     }
-  }, [input, files, sendMessage, setInput, setFiles, width]);
+  }, [input, files, sendMessage, setInput, setFiles, width, systemPromptId]);
 
   const handleFileChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {

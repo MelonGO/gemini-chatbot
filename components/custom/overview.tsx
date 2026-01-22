@@ -2,8 +2,21 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 
 import { MessageIcon, VercelIcon } from "./icons";
+import { SystemPromptSelector } from "./system-prompt-selector";
 
-export const Overview = () => {
+interface OverviewProps {
+  selectedPromptId: string | null;
+  onSelectPrompt: (id: string | null) => void;
+  onManagePrompts: () => void;
+  isPromptLocked?: boolean;
+}
+
+export const Overview = ({
+  selectedPromptId,
+  onSelectPrompt,
+  onManagePrompts,
+  isPromptLocked,
+}: OverviewProps) => {
   return (
     <motion.div
       key="overview"
@@ -43,6 +56,16 @@ export const Overview = () => {
           </Link>
           .
         </p>
+        
+        <div className="pt-2 border-t border-zinc-200 dark:border-zinc-700 mt-2">
+          <p className="text-xs text-muted-foreground mb-2">System Prompt</p>
+          <SystemPromptSelector
+            selectedPromptId={selectedPromptId}
+            onSelectPrompt={onSelectPrompt}
+            onManagePrompts={onManagePrompts}
+            disabled={isPromptLocked}
+          />
+        </div>
       </div>
     </motion.div>
   );

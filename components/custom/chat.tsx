@@ -4,13 +4,17 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, UIMessage, UIMessagePart } from "ai";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import useSWR from "swr";
 
 import { models, ModelId } from "@/ai";
 import { Message as PreviewMessage } from "@/components/custom/message";
 import { useScrollToBottom } from "@/components/custom/use-scroll-to-bottom";
+import { SystemPrompt } from "@/db/schema";
+import { fetcher } from "@/lib/utils";
 
 import { MultimodalInput } from "./multimodal-input";
 import { Overview } from "./overview";
+import { SystemPromptManager } from "./system-prompt-manager";
 
 export function Chat({
   id,
@@ -24,6 +28,24 @@ export function Chat({
   const [selectedModelId, setSelectedModelId] = useState<ModelId>(
     models[0].id,
   );
+
+  const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null);
+  const [showPromptManager, setShowPromptManager] = useState(false);
+
+  const { data: prompts } = useSWR<Array<SystemPrompt>>(
+    "/api/system-prompts",
+    fetcher,
+    { fallbackData: [] }
+  );
+
+  useEffect(() => {
+    if (initialMessages.length === 0 && prompts && prompts.length > 0) {
+      const defaultPrompt = prompts.find((p) => p.isDefault);
+      if (defaultPrompt && selectedPromptId === null) {
+        setSelectedPromptId(defaultPrompt.id);
+      }
+    }
+  }, [prompts, initialMessages.length, selectedPromptId]);
 
   useEffect(() => {
     const savedModelId = localStorage.getItem("modelId");
@@ -52,6 +74,8 @@ export function Chat({
         window.history.replaceState({}, "", `/chat/${id}`);
       },
     });
+
+  const isPromptLocked = initialMessages.length > 0 || messages.length > 0;
 
   const [messagesContainerRef, messagesEndRef] =
     useScrollToBottom<HTMLDivElement>();
@@ -175,67 +199,82 @@ export function Chat({
   };
 
   return (
-    <div className="flex flex-row justify-center pb-4 md:pb-8 h-dvh bg-background">
-      <div className="flex flex-col justify-between items-center gap-4 w-full">
-        <div
-          ref={messagesContainerRef}
-          className="flex flex-col gap-4 size-full items-center overflow-y-scroll"
-        >
-          {messages.length === 0 && <Overview />}
-
-          {messages.map((message, index) => (
-            <PreviewMessage
-              key={message.id}
-              chatId={id}
-              role={message.role}
-              content={message.parts.map((part) => {
-                if (part.type === "text") {
-                  return part.text;
-                }
-                return "";
-              }).join("")}
-              parts={message.parts}
-              isEditing={editingMessageId === message.id}
-              isSaving={savingMessageId === message.id}
-              editedText={draftText}
-              onEditStart={() => handleEditStart(message)}
-              onEditCancel={handleEditCancel}
-              onEditChange={setDraftText}
-              onEditSave={() => handleEditSave(message.id)}
-              onDelete={() => handleDelete(message.id)}
-              onRegenerate={() => handleRegenerate(index)}
-            />
-          ))}
-
-          {status === "submitted" &&
-            messages.length > 0 &&
-            messages[messages.length - 1].role === "user" && (
-              <PreviewMessage
-                chatId={id}
-                role="assistant"
-                content=""
-                isLoading={true}
+    <>
+      <div className="flex flex-row justify-center pb-4 md:pb-8 h-dvh bg-background">
+        <div className="flex flex-col justify-between items-center gap-4 w-full">
+          <div
+            ref={messagesContainerRef}
+            className="flex flex-col gap-4 size-full items-center overflow-y-scroll"
+          >
+            {messages.length === 0 && (
+              <Overview
+                selectedPromptId={selectedPromptId}
+                onSelectPrompt={setSelectedPromptId}
+                onManagePrompts={() => setShowPromptManager(true)}
+                isPromptLocked={isPromptLocked}
               />
             )}
 
-          <div
-            ref={messagesEndRef}
-            className="shrink-0 min-w-[24px] min-h-[24px]"
-          />
-        </div>
+            {messages.map((message, index) => (
+              <PreviewMessage
+                key={message.id}
+                chatId={id}
+                role={message.role}
+                content={message.parts.map((part) => {
+                  if (part.type === "text") {
+                    return part.text;
+                  }
+                  return "";
+                }).join("")}
+                parts={message.parts}
+                isEditing={editingMessageId === message.id}
+                isSaving={savingMessageId === message.id}
+                editedText={draftText}
+                onEditStart={() => handleEditStart(message)}
+                onEditCancel={handleEditCancel}
+                onEditChange={setDraftText}
+                onEditSave={() => handleEditSave(message.id)}
+                onDelete={() => handleDelete(message.id)}
+                onRegenerate={() => handleRegenerate(index)}
+              />
+            ))}
 
-        <form className="flex flex-row gap-2 relative items-end w-full md:max-w-3xl lg:max-w-4xl px-4 md:px-0">
-          <MultimodalInput
-            input={input}
-            setInput={setInput}
-            sendMessage={sendMessage}
-            isLoading={status === "submitted"}
-            stop={stop}
-            selectedModelId={selectedModelId}
-            setSelectedModelId={setSelectedModelId}
-          />
-        </form>
+            {status === "submitted" &&
+              messages.length > 0 &&
+              messages[messages.length - 1].role === "user" && (
+                <PreviewMessage
+                  chatId={id}
+                  role="assistant"
+                  content=""
+                  isLoading={true}
+                />
+              )}
+
+            <div
+              ref={messagesEndRef}
+              className="shrink-0 min-w-[24px] min-h-[24px]"
+            />
+          </div>
+
+          <form className="flex flex-row gap-2 relative items-end w-full md:max-w-3xl lg:max-w-4xl px-4 md:px-0">
+            <MultimodalInput
+              input={input}
+              setInput={setInput}
+              sendMessage={sendMessage}
+              isLoading={status === "submitted"}
+              stop={stop}
+              selectedModelId={selectedModelId}
+              setSelectedModelId={setSelectedModelId}
+              systemPromptId={selectedPromptId}
+            />
+          </form>
+        </div>
       </div>
-    </div>
+
+      <SystemPromptManager
+        open={showPromptManager}
+        onOpenChange={setShowPromptManager}
+      />
+    </>
   );
 }

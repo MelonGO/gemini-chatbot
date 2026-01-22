@@ -1,11 +1,11 @@
 import "server-only";
 
 import { genSaltSync, hashSync } from "bcrypt-ts";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 
-import { user, chat, User, reservation } from "./schema";
+import { user, chat, User, reservation, systemPrompt, SystemPrompt } from "./schema";
 
 // Optionally, if not using email/pass login, you can
 // use the Drizzle adapter for Auth.js / NextAuth
@@ -38,10 +38,12 @@ export async function saveChat({
   id,
   messages,
   userId,
+  systemPromptId,
 }: {
   id: string;
   messages: any;
   userId: string;
+  systemPromptId?: string | null;
 }) {
   try {
     const selectedChats = await db.select().from(chat).where(eq(chat.id, id));
@@ -60,6 +62,7 @@ export async function saveChat({
       createdAt: new Date(),
       messages: JSON.stringify(messages),
       userId,
+      systemPromptId: systemPromptId ?? null,
     });
   } catch (error) {
     console.error("Failed to save chat in database");
@@ -121,4 +124,135 @@ export async function updateReservation({
       hasCompletedPayment,
     })
     .where(eq(reservation.id, id));
+}
+
+// System Prompt queries
+
+export async function getSystemPromptsByUserId({
+  userId,
+}: {
+  userId: string;
+}): Promise<SystemPrompt[]> {
+  try {
+    return await db
+      .select()
+      .from(systemPrompt)
+      .where(eq(systemPrompt.userId, userId))
+      .orderBy(desc(systemPrompt.createdAt));
+  } catch (error) {
+    console.error("Failed to get system prompts from database");
+    throw error;
+  }
+}
+
+export async function getSystemPromptById({
+  id,
+}: {
+  id: string;
+}): Promise<SystemPrompt | undefined> {
+  try {
+    const [prompt] = await db
+      .select()
+      .from(systemPrompt)
+      .where(eq(systemPrompt.id, id));
+    return prompt;
+  } catch (error) {
+    console.error("Failed to get system prompt by id from database");
+    throw error;
+  }
+}
+
+export async function createSystemPrompt({
+  userId,
+  name,
+  content,
+  isDefault = false,
+}: {
+  userId: string;
+  name: string;
+  content: string;
+  isDefault?: boolean;
+}): Promise<SystemPrompt> {
+  try {
+    // If setting as default, unset existing defaults for this user
+    if (isDefault) {
+      await db
+        .update(systemPrompt)
+        .set({ isDefault: false })
+        .where(eq(systemPrompt.userId, userId));
+    }
+
+    const [created] = await db
+      .insert(systemPrompt)
+      .values({ userId, name, content, isDefault, createdAt: new Date() })
+      .returning();
+    return created;
+  } catch (error) {
+    console.error("Failed to create system prompt in database");
+    throw error;
+  }
+}
+
+export async function updateSystemPrompt({
+  id,
+  userId,
+  name,
+  content,
+  isDefault,
+}: {
+  id: string;
+  userId: string;
+  name?: string;
+  content?: string;
+  isDefault?: boolean;
+}): Promise<void> {
+  try {
+    // If setting as default, unset existing defaults for this user
+    if (isDefault) {
+      await db
+        .update(systemPrompt)
+        .set({ isDefault: false })
+        .where(eq(systemPrompt.userId, userId));
+    }
+
+    await db
+      .update(systemPrompt)
+      .set({
+        ...(name !== undefined && { name }),
+        ...(content !== undefined && { content }),
+        ...(isDefault !== undefined && { isDefault }),
+      })
+      .where(eq(systemPrompt.id, id));
+  } catch (error) {
+    console.error("Failed to update system prompt in database");
+    throw error;
+  }
+}
+
+export async function deleteSystemPrompt({ id }: { id: string }): Promise<void> {
+  try {
+    await db.delete(systemPrompt).where(eq(systemPrompt.id, id));
+  } catch (error) {
+    console.error("Failed to delete system prompt from database");
+    throw error;
+  }
+}
+
+export async function getDefaultSystemPrompt({
+  userId,
+}: {
+  userId: string;
+}): Promise<SystemPrompt | undefined> {
+  try {
+    const [prompt] = await db
+      .select()
+      .from(systemPrompt)
+      .where(
+        and(eq(systemPrompt.userId, userId), eq(systemPrompt.isDefault, true))
+      );
+    return prompt;
+  } catch (error) {
+    console.error("Failed to get default system prompt from database");
+    throw error;
+  }
 }
