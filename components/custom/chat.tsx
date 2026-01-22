@@ -227,6 +227,13 @@ export function Chat({
                   return "";
                 }).join("")}
                 parts={message.parts}
+                isLoading={
+                  status === "streaming" &&
+                  index === messages.length - 1 &&
+                  message.role === "assistant" &&
+                  // Only show loading if there is NO text content yet
+                  message.parts.every((part) => part.type !== "text" || part.text === "")
+                }
                 isEditing={editingMessageId === message.id}
                 isSaving={savingMessageId === message.id}
                 editedText={draftText}
