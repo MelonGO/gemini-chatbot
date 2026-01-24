@@ -13,6 +13,7 @@ import {
   saveChat,
   getSystemPromptById,
 } from "@/db/queries";
+import { GoogleGenerativeAIProviderOptions } from "@ai-sdk/google";
 
 export async function POST(request: Request) {
   const {
@@ -48,6 +49,9 @@ export async function POST(request: Request) {
     model: getModelById(modelId),
     system: systemMessage,
     messages: coreMessages,
+    temperature: 1,
+    topP: 0.95,
+    maxOutputTokens: 65536,
   });
 
   return result.toUIMessageStreamResponse({
