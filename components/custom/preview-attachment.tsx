@@ -19,7 +19,7 @@ export const PreviewAttachment = ({
   const { name, url, contentType } = attachment;
 
   return (
-    <div className="flex flex-col gap-2 max-w-16">
+    <div className="flex flex-col gap-2 pr-2 mt-0.5">
       <div className="h-20 w-16 bg-muted rounded-md relative flex flex-col items-center justify-center">
         {contentType ? (
           contentType.startsWith("image") ? (

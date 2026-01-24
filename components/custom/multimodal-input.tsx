@@ -147,7 +147,7 @@ export function MultimodalInput({
       />
 
       {files.length > 0 && (
-        <div className="flex flex-row gap-2 overflow-x-scroll">
+        <div className="flex flex-row gap-2 overflow-x-scroll p-1">
           {files.map((fileWithPreview) => (
             <PreviewAttachment
               key={fileWithPreview.url}

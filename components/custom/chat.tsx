@@ -253,7 +253,7 @@ export function Chat({
                   chatId={id}
                   role="assistant"
                   content=""
-                  isLoading={true}
+                  isLoading={false}
                 />
               )}
 
